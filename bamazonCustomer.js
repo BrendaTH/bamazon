@@ -4,6 +4,7 @@ var mysql    = require("mysql");
 var inquirer = require('inquirer');
 const cTable = require('console.table');
 var keys    = require('./keys');
+var utils   = require("./utilsTable.js");
 
 
 
@@ -22,10 +23,11 @@ var connection = mysql.createConnection({
 });
 
 connection.connect(function(err) {
-if (err) throw err;
-console.log("connected as id " + connection.threadId + "\n");
-displayProductTable();
+    if (err) throw err;
+    console.log("connected as id " + connection.threadId + "\n");
+    displayProductTable();
 });
+
 
 //******************************* */
 // Display the Product Table
@@ -33,26 +35,14 @@ displayProductTable();
 function displayProductTable() {
     connection.query("SELECT * FROM products", function(err, res) {
     if (err) throw err;
-    // build all products into an array
-    var productTableArr = [];
-    for (var i = 0; i < res.length; i++) {
-        productTableArr.push({
-            ID: res[i].item_id,
-            product: res[i].product_name,
-            department: res[i].department_name,
-            price : '$' + res[i].price,
-            quantity: res[i].stock_quantity,
-        });
-    }
-    // log the products in a table format to the screen
-    console.table('          I T E M S   A V A I L A B L E   F O R   S A L E', productTableArr);
-    AcceptIdAndQuantity(productTableArr);
+    var productTableArr = utils.displayProductTable(res);
+    RequestIdAndQuantity(productTableArr);
     });
 }
 //******************************* */
-// Accept Product ID and Quanity to Buy From User
+// Request Product ID and Quanity to Buy From User
 //******************************* */
-function AcceptIdAndQuantity(productTableArray) {
+function RequestIdAndQuantity(productTableArray) {
     var maxItems = productTableArray.length;
     var questions = [
         {
@@ -86,140 +76,36 @@ function AcceptIdAndQuantity(productTableArray) {
     });
 }
 
+//******************************* */
+// Validate the User's Order 
+// ie do we have enough stock to fulfill the order
+//******************************* */
 function validateOrder(answers) {
     var query = "SELECT product_name, stock_quantity, price FROM products WHERE ?";
     connection.query(query, { item_id: answers.product_id }, function(err, res) {
         if (err) throw err;
-        var totalAvailable;
-        var productName;
-        var pricePerUnit;
-        for (var i = 0; i < res.length; i++) {
-            totalAvailable = res[i].stock_quantity;
-            productName = res[i].product_name;
-            pricePerUnit = res[i].price;
+        var orderItem = utils.displayItemAvailabilityTable(res, answers);
 
-        }
-        var productAvailabilityArr = [];
-        productAvailabilityArr.push({
-            ID: answers.product_id,
-            product: productName,
-            price: '$' + pricePerUnit,
-            'Quantity In Stock': totalAvailable,
-            'Total Ordered': answers.unit_count,
-            'Order Status': `${totalAvailable < answers.unit_count ? 'Failed: Insufficient Quantity!' : 'Processing - In Stock'}`,
-        });
-        // log the item availability in table format to the screen
-        console.log(`
-        
-        `);
-        console.table('          I T E M   A V A I L A B L I T Y', productAvailabilityArr);
-        if (totalAvailable < answers.unit_count) {
+        if (orderItem.totalAvailable < answers.unit_count) {
             connection.end();
         } else {
-            var orderItem = {
-                totalAvailable: totalAvailable,
-                productName: productName,
-                pricePerUnit: pricePerUnit,
-            }
             placeOrder(answers, orderItem); 
 
         }
     });
 }
-
+//******************************* */
+// Finalize the User's Order 
+// ie adjust the inventory and display the user's cost
+// then end the connection
+//******************************* */
 function placeOrder(answers, orderItem) {
     var newTotalAvailable = orderItem.totalAvailable - answers.unit_count;
     var query = "UPDATE  products SET ? WHERE ?";
 
     connection.query(query, [{ stock_quantity: newTotalAvailable}, {item_id: answers.product_id }], function(err) {
         if (err) throw err;
-        var orderStatusArr = [];
-        orderStatusArr.push({
-            ID: answers.product_id,
-            product: orderItem.productName,
-            price: '$' + orderItem.pricePerUnit,
-            'Total Ordered': answers.unit_count,
-            'Customer Cost': `${answers.unit_count * orderItem.pricePerUnit}`,
-            'Order Status': 'Complete',
-        });
-        // log the order status in table format to the screen
-        console.log(`
-        
-        `);
-        console.table('              O R D E R   S T A T U S ', orderStatusArr);
+        utils.displayOrderStatusTable(answers, orderItem);
         connection.end();
     });
 }
-
-/*
-
-
-        var totalAvailable = 0;
-        var productName = '';
-        for (var i = 0; i < res.length; i++) {
-            totalAvailable = res[i].stock_quantity;
-            productName = res[i].product_name;
-            console.log("quantity: " + total);
-
-        }
-        if (total < answers.unit_count) {
-            console.log("Insufficient quantity of " + productName);
-            connection.end();
-        } else {
-            console.log(" There are " + totalAvailable + " of the " + productName + " available");
-            placeOrder(answers, totalAvailable, productName); 
-
-        }
-    });
-}
-
-
-
-    
-        if (err) throw err;
-        // build all products into an array
-        var productTableArr = [];
-        for (var i = 0; i < res.length; i++) {
-            productTableArr.push({
-                ID: res[i].item_id,
-                product: res[i].product_name,
-                department: res[i].department_name,
-                price : '$' + res[i].price,
-                quantity: res[i].stock_quantity,
-            });
-        }
-        // log the products in a table format to the screen
-        console.table('          I T E M S   A V A I L A B L E   F O R   S A L E', productTableArr);
-        AcceptIdAndQuantity(productTableArr);
-        });
-
-}
-
-
-
-
-
-
-
-    inquirer
-    .prompt({
-      name: "postOrBid",
-      type: "list",
-      message: "Would you like to [POST] an auction or [BID] on an auction?",
-      choices: ["POST", "BID", "EXIT"]
-    })
-    .then(function(answer) {
-      // based on their answer, either call the bid or the post functions
-      if (answer.postOrBid === "POST") {
-        postAuction();
-      }
-      else if(answer.postOrBid === "BID") {
-        bidAuction();
-      } else{
-        connection.end();
-      }
-    });
-
-   }
-*/
-  
