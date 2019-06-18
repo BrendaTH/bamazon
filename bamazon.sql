@@ -9,7 +9,8 @@ product_name VARCHAR(255),
 department_name VARCHAR(255),
 price DECIMAL(6,2),
 stock_quantity INTEGER,
-PRIMARY KEY (item_id)
+PRIMARY KEY (item_id),
+UNIQUE (product_name)
 );
 
 INSERT INTO products (product_name, department_name, price, stock_quantity)

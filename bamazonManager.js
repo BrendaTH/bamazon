@@ -6,8 +6,9 @@ const cTable = require('console.table');
 var keys    = require('./keys');
 var utils   = require("./utilsTable.js");
 
-
-
+//******************************************** */
+// sql connection config
+//******************************************** */
 var connection = mysql.createConnection({
     host: "localhost",
   
@@ -21,13 +22,17 @@ var connection = mysql.createConnection({
     password: keys.mysqlpw.pw,
     database: "bamazon"
 });
-
+//******************************************** */
+// make the sql connection
+//******************************************** */
 connection.connect(function(err) {
 if (err) throw err;
 console.log("connected as id " + connection.threadId + "\n");
 listMenuOptions();
 });
-
+//******************************************** */
+// show the menu
+//******************************************** */
 function listMenuOptions() {
     inquirer
     .prompt({
@@ -63,6 +68,9 @@ function listMenuOptions() {
 
     });
 }
+//******************************************** */
+// display product table
+//******************************************** */
 function displayProductTable() {
     connection.query("SELECT * FROM products", function(err, res) {
         if (err) throw err;
@@ -70,9 +78,11 @@ function displayProductTable() {
         listMenuOptions();
         });
 }
-
+//******************************************** */
+// view low inventory
+//******************************************** */
 function viewLowInventory() {
-    const lowQuantity = 40;
+    const lowQuantity = 5;
     var query = "SELECT * FROM products WHERE stock_quantity < ?";
     connection.query(query, lowQuantity, function(err, res) {
         if (err) throw err;
@@ -130,53 +140,36 @@ function findCurrentInventory(answers) {
     var query = "SELECT stock_quantity FROM products WHERE ?";
     connection.query(query, {item_id: answers.product_id}, function(err, res) {
         if (err) throw err;
-        console.log(res.length);
-        console.log(res);
 
         if (res.length === 0) {
-
             console.log("Invalid product ID. Please choose again");
             listMenuOptions();
             return;
-        }
-        console.log('here');
-        var currentQuantity;
-        var newQuantity = 0;
-        for (var i = 0; i < res.length; i++) {
-
-            currentQuantity = res[i].stock_quantity;
-            newQuantity = parseInt(currentQuantity) ? parseInt(currentQuantity) + parseInt(answers.unit_count) : 0
-
-            console.log(currentQuantity + " " + i);
-
-        }
-        if (newQuantity === 0) {
-            listMenuOptions();
-
-
         } else {
-        // var newQuantity = parseInt(currentQuantity) + parseInt(answers.unit_count);
-        console.log('call update inventory line 156');
-        updateInventory(newQuantity, answers.product_id);
+
+            var currentQuantity;
+            var newQuantity = 0;
+            for (var i = 0; i < res.length; i++) {
+                currentQuantity = res[i].stock_quantity;
+                newQuantity = parseInt(currentQuantity) ? parseInt(currentQuantity) + parseInt(answers.unit_count) : 0
+            }
+            updateInventory(newQuantity, answers.product_id);
         }
-
-
-
     });
 }
 function updateInventory(newQuantity, id) {
     var query = "UPDATE  products SET ? WHERE ?";
-    connection.query(query, [{ stock_quantity: newQuantity}, {item_id: id}], function(err) {
+    var response = connection.query(query, [{ stock_quantity: newQuantity}, {item_id: id}], function(err) {
         if (err) throw err;
+        console.log(response.sql);
         console.log("new quantity for id: " + id + " is: " + newQuantity);
         listMenuOptions();
     });
 
 }
-
-
-
-
+//******************************************** */
+// add new product
+//******************************************** */
 function addNewProduct() {
         var questions = [
             {
@@ -235,7 +228,9 @@ function insertProductIntoTable(a) {
                 listMenuOptions();
             });
 }
-
+//******************************************** */
+// exit 
+//******************************************** */
 function exitManagerView() {
     connection.end();
 }

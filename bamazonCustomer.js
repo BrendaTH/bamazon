@@ -7,7 +7,6 @@ var keys    = require('./keys');
 var utils   = require("./utilsTable.js");
 
 
-
 var connection = mysql.createConnection({
     host: "localhost",
   
@@ -22,12 +21,12 @@ var connection = mysql.createConnection({
     database: "bamazon"
 });
 
+
 connection.connect(function(err) {
     if (err) throw err;
     console.log("connected as id " + connection.threadId + "\n");
     displayProductTable();
 });
-
 
 //******************************* */
 // Display the Product Table
@@ -50,8 +49,8 @@ function RequestIdAndQuantity(productTableArray) {
             name: 'product_id',
             message: 'Please enter the product id for the item to purchase.',
             validate: function(id) {
-                if (isNaN(id) || id <= 0 || id > maxItems) {
-                return 'Must be a number, greater than 0, and less than or equal to ' + maxItems + '. Please try again';
+                if (isNaN(id) || id <= 0) {
+                return 'Must be a number and greater than 0. Please try again';
                 }
         
                 return true;
@@ -70,27 +69,29 @@ function RequestIdAndQuantity(productTableArray) {
             }
         }
     ];
-    
     inquirer.prompt(questions).then(answers => {
         validateOrder(answers);
     });
 }
-
 //******************************* */
 // Validate the User's Order 
 // ie do we have enough stock to fulfill the order
 //******************************* */
 function validateOrder(answers) {
-    var query = "SELECT product_name, stock_quantity, price FROM products WHERE ?";
+    var query = "SELECT * FROM products WHERE ?";
     connection.query(query, { item_id: answers.product_id }, function(err, res) {
         if (err) throw err;
+        if (res.length === 0) {
+            console.log("Invalid product ID. Exiting program");
+            connection.end();
+            return;
+        }
         var orderItem = utils.displayItemAvailabilityTable(res, answers);
 
         if (orderItem.totalAvailable < answers.unit_count) {
             connection.end();
         } else {
             placeOrder(answers, orderItem); 
-
         }
     });
 }
