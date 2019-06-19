@@ -17,7 +17,7 @@ They are:
 The technology/interesting features for this project includes the following:
 * node.js 
 * inquirer - NPM package to allow cli input
-* MySQL - Both the primary key (item_id) and the product_name are unique in the database. The file bamazon.sql has the script to create the database, the table, and populate it.
+* MySQL - Both the primary key (item_id) and the product_name are unique in the database. The file schema.sql has the script to create the database and the table. Use products.csv to populate the table.
 * console.table - NPM package to print display output in a table format. The table handling is handled in a external file (utilsTable.js).
 * dotenv - allows hiding of the MySQL password
 

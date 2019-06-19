@@ -1,0 +1,11 @@
+item_id,product_name,department_name,price,stock_quantity
+1,milk-bone,"dog treats",8.24,25
+2,pup-peroni,"dog treats",5.49,12
+3,"beggin strips","dog treats",14.83,32
+4,pedigree,"dog food",18.10,50
+5,iams,"dog food",31.94,43
+6,"blue buffalo","dog food",48.74,32
+7,beneful,"dog food",13.59,48
+8,"plush monkey","dog squeaky toys",12.88,50
+9,"screamin chicken","dog squeaky toys",12.80,43
+10,"3 pack standing stick latex animals","dog squeaky toys",48.74,32
